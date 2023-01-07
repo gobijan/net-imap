@@ -1073,6 +1073,8 @@ EOF
 
   def test_responses
     with_fake_server do |server, imap|
+      original_silence = Net::IMAP.silence_thread_safety_deprecation_warnings
+      Net::IMAP.silence_thread_safety_deprecation_warnings = false
       # responses available before SELECT/EXAMINE
       assert_equal(%w[IMAP4REV1 NAMESPACE MOVE IDLE UTF8=ACCEPT],
                    imap.responses("CAPABILITY", &:last))
@@ -1090,6 +1092,15 @@ EOF
         assert_equal(%i[Answered Flagged Deleted Seen Draft],
                      imap.responses["FLAGS"]&.last)
       end
+      Net::IMAP.silence_thread_safety_deprecation_warnings = true
+      # TODO: assert_no_warn?
+      stderr = EnvUtil.verbose_warning {
+        assert_equal(%i[Answered Flagged Deleted Seen Draft],
+                     imap.responses["FLAGS"]&.last)
+      }
+      assert_empty stderr
+    ensure
+      Net::IMAP.silence_thread_safety_deprecation_warnings = original_silence
     end
   end
 
