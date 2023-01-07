@@ -2311,7 +2311,7 @@ module Net
       elsif type
         raise ArgumentError, "Pass a block or use #clear_responses"
       else
-        # warn("DEPRECATED: pass a block or use #clear_responses", uplevel: 1)
+        warn("DEPRECATED: pass a block or use #clear_responses", uplevel: 1)
         @responses
       end
     end

@@ -1086,10 +1086,10 @@ EOF
       assert_equal(1, imap.responses("RECENT", &:last))
       assert_raise(ArgumentError) do imap.responses("UIDNEXT") end
       # Deprecated style, without a block:
-      # assert_warn(/Pass a block.*or.*clear_responses/i) do
-      #   assert_equal(%i[Answered Flagged Deleted Seen Draft],
-      #                imap.responses["FLAGS"]&.last)
-      # end
+      assert_warn(/Pass a block.*or.*clear_responses/i) do
+        assert_equal(%i[Answered Flagged Deleted Seen Draft],
+                     imap.responses["FLAGS"]&.last)
+      end
     end
   end
 
