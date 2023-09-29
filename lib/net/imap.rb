@@ -1247,9 +1247,12 @@ module Net
     # Previously cached #capabilities will be cleared when this method
     # completes.  If the TaggedResponse to #authenticate includes updated
     # capabilities, they will be cached.
-    def authenticate(mechanism, *args, sasl_ir: true, **kwargs, &block)
+    def authenticate(mechanism, *args,
+                     sasl_ir: true,
+                     registry: SASL.authenticators,
+                     **kwargs, &block)
       mechanism = mechanism.to_s.tr("_", "-").upcase
-      authenticator = SASL.authenticator(mechanism, *args, **kwargs, &block)
+      authenticator = registry.new(mechanism, *args, **kwargs, &block)
       SASL::IMAPAdapter.authenticate(self, mechanism, authenticator,
                                      sasl_ir: sasl_ir,
                                      &method(:send_command_with_continuations))
