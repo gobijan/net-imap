@@ -24,7 +24,7 @@ class Net::IMAP::SASL::DigestMD5Authenticator
   # "Authentication identity" is the generic term used by
   # RFC-4422[https://tools.ietf.org/html/rfc4422].
   # RFC-4616[https://tools.ietf.org/html/rfc4616] and many later RFCs abbreviate
-  # that to +authcid+.  So +authcid+ is available as an alias for #username.
+  # this to +authcid+.
   attr_reader :username
   alias authcid username
 
@@ -101,8 +101,9 @@ class Net::IMAP::SASL::DigestMD5Authenticator
   attr_reader :qop
 
   # :call-seq:
-  #   new(username,  password,  authzid = nil, **options) -> authenticator
+  #   new(authcid:,  password:, authzid:  nil, **options) -> authenticator
   #   new(username:, password:, authzid:  nil, **options) -> authenticator
+  #   new(username,  password,  authzid = nil, **options) -> authenticator
   #
   # Creates an Authenticator for the "+DIGEST-MD5+" SASL mechanism.
   #
@@ -110,49 +111,51 @@ class Net::IMAP::SASL::DigestMD5Authenticator
   #
   # ==== Parameters
   #
-  # * #username — Identity whose #password is used.
-  # * #password — A password or passphrase associated with this #username.
-  # * #authzid ― Alternate identity to act as or on behalf of.  Optional.
-  # * #realm — A namespace for the #username, e.g. a domain.  <em>Defaults to the
-  #   last realm in the server-provided .</em>
-  # * #host — FQDN for requested service. <em>Defaults to</em> #realm.
-  # * #service_name — The generic host name when the server is replicated.
-  # * #service — the registered service protocol. e.g. "imap", "smtp", "ldap",
-  #   "xmpp".  <em>For Net::IMAP, this defaults to "imap".</em>
-  # * +warn_deprecation+ — Set to +false+ to silence the warning.
+  # * #username ― Authentication identity that is associated with #password.
+  # * #authcid  ― An alias for +username+.
+  # * #password ― A password or passphrase associated with this #username.
+  # * _optional_ #authzid ― Authorization identity to act as or on behalf of.
+  # * _optional_ $realm — A namespace for the #username, e.g. a domain.
+  #   <em>Defaults to the last realm in the server-provided .</em>
+  # * _optional_ #host — FQDN for requested service.
+  #   <em>Defaults to</em> #realm
+  # * _optional_ #service_name — The generic host name, when the server is
+  #   replicated.
+  # * _optional_ #service — the registered service protocol. e.g. "imap",
+  #   "smtp", "ldap", "xmpp".  <em>For Net::IMAP, this defaults to "imap".</em>
+  # * _optional_ +warn_deprecation+ — Set to +false+ to silence the warning.
+  #
+  # Any other keyword arguments are silently ignored.
+  #
+  # When +authzid+ is not set, the server should derive the authorization
+  # identity from the authentication identity.
   #
   # See the documentation for each attribute for more details.
-  def initialize(username_arg = nil, password_arg = nil, authzid_arg = nil,
-                 username: nil, password: nil, authzid: nil,
-                 authcid: nil, # alias for username
-                 realm: nil, service: "imap", host: nil, service_name: nil,
+  def initialize(user = nil, pass = nil, authz = nil,
+                 authcid: nil, username: nil,
+                 authzid: nil,
+                 password: nil,
+                 realm: nil,
+                 service: "imap",
+                 host: nil,
+                 service_name: nil,
                  warn_deprecation: true,
                  **)
-    if warn_deprecation
-      warn "WARNING: DIGEST-MD5 SASL mechanism was deprecated by RFC-6331."
-    end
-
-    require "digest/md5"
-    require "securerandom"
-    require "strscan"
-
-    @username     = username || username_arg || authcid
-    @password     = password || password_arg
-    @authzid      = authzid  || authzid_arg
+    @username     = authcid  || username || user
+    @password     = password || pass
+    @authzid      = authzid  || authz
     @realm        = realm
     @host         = host
     @service      = service
     @service_name = service_name
-
-    @username or raise ArgumentError, "missing username"
+    @username or raise ArgumentError, "missing username (authcid)"
     @password or raise ArgumentError, "missing password"
-    [username, username_arg, authcid].compact.count == 1 or
-      raise ArgumentError, "conflicting values for username"
-    [password, password_arg].compact.count == 1 or
-      raise ArgumentError, "conflicting values for password"
-    [authzid, authzid_arg].compact.count <= 1 or
-      raise ArgumentError, "conflicting values for authzid"
-
+    if warn_deprecation
+      warn "WARNING: DIGEST-MD5 SASL mechanism was deprecated by RFC-6331."
+    end
+    require "digest/md5"
+    require "securerandom"
+    require "strscan"
     @nc, @stage = {}, STAGE_ONE
   end
 
